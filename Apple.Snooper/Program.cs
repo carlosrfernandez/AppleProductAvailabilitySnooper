@@ -24,14 +24,15 @@ namespace Apple.Snooper
             var mailClient = new Mailer();
             var httpclient = new AppleHttpClient();
             var iPhoneModels = ConfigurationManager.AppSettings["iPhoneModels"].Split(';');
+            var storeCode = ConfigurationManager.AppSettings["Store"];
             foreach (var model in iPhoneModels)
             {
-                CheckiPhoneAvailability(httpclient, model, mailClient, emailFromArg);
+                CheckiPhoneAvailability(httpclient, model, mailClient, emailFromArg, storeCode);
             }
         }
 
         private static void CheckiPhoneAvailability(AppleHttpClient httpclient, string model, Mailer mailClient,
-            EmailConfig emailFromArg)
+            EmailConfig emailFromArg, string storeCode)
         {
             var jsonString = httpclient.CheckiPhoneAvailability(model).Result;
             var json = JsonConvert.DeserializeObject(jsonString) as JObject;
@@ -45,7 +46,7 @@ namespace Apple.Snooper
 
             var stores = json["body"]["stores"];
 
-            var ourStore = stores.FirstOrDefault(x => x["storeNumber"].ToString() == Constants.StoreCode);
+            var ourStore = stores.FirstOrDefault(x => x["storeNumber"].ToString() == storeCode);
 
             if (ourStore == null)
             {
