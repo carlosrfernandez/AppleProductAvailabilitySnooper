@@ -16,19 +16,19 @@ namespace Apple.Snooper
         {
             var emailFromArg = ReadConfig();
             var url = ConfigurationManager.AppSettings["RequestUrl"];
-            var iPhoneModels = ConfigurationManager.AppSettings["iPhoneModels"].Split(';');
+            var productModels = ConfigurationManager.AppSettings["ProductModels"].Split(';');
             var storeCode = ConfigurationManager.AppSettings["Store"];
             var location = ConfigurationManager.AppSettings["Location"];
 
             var httpclient = new AppleHttpClient(url);
             
-            foreach (var model in iPhoneModels)
+            foreach (var model in productModels)
             {
-                CheckiPhoneAvailability(httpclient, model, emailFromArg, storeCode, location);
+                CheckProductAvailability(httpclient, model, emailFromArg, storeCode, location);
             }
         }
 
-        private static void CheckiPhoneAvailability(AppleHttpClient httpclient, string model, 
+        private static void CheckProductAvailability(AppleHttpClient httpclient, string model, 
             EmailConfig emailFromArg, string storeCode, string location)
         {
             var jsonString = httpclient.CheckiPhoneAvailability(model, location).Result;
@@ -42,19 +42,20 @@ namespace Apple.Snooper
             }
 
             var stores = json["body"]["stores"];
+            if (stores == null)
+            {
+                Log.Error("No stores found in the response json.");
+                return;
+            }
 
-            var ourStore = stores.FirstOrDefault(x => x["storeNumber"].ToString() == storeCode);
+            var ourStore = storeCode != string.Empty
+                ? stores.FirstOrDefault(x => x["storeNumber"].ToString() == storeCode)
+                : stores.First();
 
             if (ourStore == null)
             {
                 Console.WriteLine("Store not found. ");
-                Log.Warn("Store not found. Assuming first store from collection.");
-                ourStore = stores.First();
-                if (ourStore == null)
-                {
-                    Log.Error("Store collection empty.");
-                    return;
-                }
+                return;
             }
 
             var modelDescription = ourStore["partsAvailability"][model]["storePickupProductTitle"].ToString();
@@ -67,7 +68,7 @@ namespace Apple.Snooper
                     Mailer.Notify(emailFromArg, modelDescription, ourStore["storeName"].ToString()).Result;
 
                 if (emailResult) return;
-                //
+
                 Console.WriteLine("Error sending e-mail.");
                 Log.Error("Error sending e-mail.");
             }
