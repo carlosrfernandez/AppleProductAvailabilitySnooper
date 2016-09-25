@@ -6,11 +6,15 @@ namespace Apple.Snooper
 {
     public class AppleHttpClient
     {
-        private const string Url = @"http://www.apple.com/es/shop/retail/pickup-message?parts.0={0}&location=08020";
-
-        public async Task<string> CheckiPhoneAvailability(string modelNumber)
+        private readonly string _url;
+        public AppleHttpClient(string url)
         {
-            var uriString = string.Format(Url, modelNumber);
+            _url = url;
+        }
+
+        public async Task<string> CheckiPhoneAvailability(string modelNumber, string location)
+        {
+            var uriString = string.Format(_url, modelNumber, location);
             var uri = new Uri(uriString);
 
             var handler = new HttpClientHandler();

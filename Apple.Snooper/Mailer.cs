@@ -6,11 +6,14 @@ using System.Net;
 using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
+using log4net;
 
 namespace Apple.Snooper
 {
-    public class Mailer
+    public class Mailer : IMailer
     {
+        private static readonly ILog Log = LogManager.GetLogger("MyLogger");
+
         public async Task<bool> Notify(EmailConfig emailConfig, string model, string store)
         {
             try
@@ -34,6 +37,7 @@ namespace Apple.Snooper
             }
             catch (Exception ex)
             {
+                Log.Error(ex);
                 return false;
             }
         }
@@ -49,9 +53,7 @@ namespace Apple.Snooper
                 mailMessage.CC.Add(ma);
             }
 
-
             return mailMessage;
-
         }
     }
 }

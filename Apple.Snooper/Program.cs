@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Configuration;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using log4net;
-using log4net.Config;
-using log4net.Core;
-using log4net.Repository.Hierarchy;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -16,25 +10,28 @@ namespace Apple.Snooper
     class Program
     {
         private static readonly ILog Log = LogManager.GetLogger("MyLogger");
+        private static readonly IMailer Mailer = new Mailer();
         
-
-        static void Main(string[] args)
+        static void Main()
         {
             var emailFromArg = ReadConfig();
-            var mailClient = new Mailer();
-            var httpclient = new AppleHttpClient();
+            var url = ConfigurationManager.AppSettings["RequestUrl"];
             var iPhoneModels = ConfigurationManager.AppSettings["iPhoneModels"].Split(';');
             var storeCode = ConfigurationManager.AppSettings["Store"];
+            var location = ConfigurationManager.AppSettings["Location"];
+
+            var httpclient = new AppleHttpClient(url);
+            
             foreach (var model in iPhoneModels)
             {
-                CheckiPhoneAvailability(httpclient, model, mailClient, emailFromArg, storeCode);
+                CheckiPhoneAvailability(httpclient, model, emailFromArg, storeCode, location);
             }
         }
 
-        private static void CheckiPhoneAvailability(AppleHttpClient httpclient, string model, Mailer mailClient,
-            EmailConfig emailFromArg, string storeCode)
+        private static void CheckiPhoneAvailability(AppleHttpClient httpclient, string model, 
+            EmailConfig emailFromArg, string storeCode, string location)
         {
-            var jsonString = httpclient.CheckiPhoneAvailability(model).Result;
+            var jsonString = httpclient.CheckiPhoneAvailability(model, location).Result;
             var json = JsonConvert.DeserializeObject(jsonString) as JObject;
 
             if (json == null)
@@ -51,24 +48,28 @@ namespace Apple.Snooper
             if (ourStore == null)
             {
                 Console.WriteLine("Store not found. ");
-                Log.Warn("Store not found. ");
-                return;
+                Log.Warn("Store not found. Assuming first store from collection.");
+                ourStore = stores.First();
+                if (ourStore == null)
+                {
+                    Log.Error("Store collection empty.");
+                    return;
+                }
             }
+
             var modelDescription = ourStore["partsAvailability"][model]["storePickupProductTitle"].ToString();
             var partsAvailabilityString = ourStore["partsAvailability"][model]["pickupSearchQuote"].ToString();
 
             if (partsAvailabilityString != Constants.MensajeNoDisponible)
             {
                 Log.Info($"iPhone {modelDescription} available.");
-                var emailResult = mailClient.Notify(emailFromArg, modelDescription, ourStore["storeName"].ToString()).Result;
-                if (!emailResult)
-                {
-                    //
-                    Console.WriteLine("Error sending e-mail.");
-                    Log.Error("Error sending e-mail.");
-                }
+                var emailResult =
+                    Mailer.Notify(emailFromArg, modelDescription, ourStore["storeName"].ToString()).Result;
 
-                // TODO send e-mail.
+                if (emailResult) return;
+                //
+                Console.WriteLine("Error sending e-mail.");
+                Log.Error("Error sending e-mail.");
             }
             else
             {

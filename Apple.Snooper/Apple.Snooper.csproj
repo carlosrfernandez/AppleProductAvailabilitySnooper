@@ -53,10 +53,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EmailConfig.cs" />
-    <Compile Include="HttpClient.cs" />
+    <Compile Include="AppleHttpClient.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="IMailer.cs" />
     <Compile Include="Mailer.cs" />
-    <Compile Include="MyLogger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
