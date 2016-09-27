@@ -36,15 +36,15 @@ namespace Apple.Snooper
 
             if (json == null)
             {
-                Log.Error($"{DateTime.Now} - Could not read the response data.");
-                Console.WriteLine($"{DateTime.Now} - Could not read Request data.");
+                Log.Error("Could not read the response data.");
+                Console.WriteLine("Could not read Request data.");
                 return;
             }
 
             var stores = json["body"]["stores"];
             if (stores == null)
             {
-                Log.Error($"{DateTime.Now} - No stores found in the response json.");
+                Log.Error("No stores found in the response json.");
                 return;
             }
 
@@ -55,7 +55,6 @@ namespace Apple.Snooper
             if (ourStore == null)
             {
                 Console.WriteLine("Store not found. ");
-                Log.Error($"{DateTime.Now} - Store not found.");
                 return;
             }
 
@@ -64,20 +63,20 @@ namespace Apple.Snooper
 
             if (partsAvailabilityString != Constants.MensajeNoDisponible)
             {
-                Log.Info($"{DateTime.Now} - iPhone {modelDescription} available.");
+                Log.Info($"iPhone {modelDescription} available.");
                 var emailResult =
                     Mailer.Notify(emailFromArg, modelDescription, ourStore["storeName"].ToString()).Result;
 
                 if (emailResult) return;
 
                 Console.WriteLine("Error sending e-mail.");
-                Log.Error($"{DateTime.Now} - Error sending e-mail.");
+                Log.Error("Error sending e-mail.");
             }
             else
             {
                 // retry later?
-                Console.WriteLine($"{DateTime.Now} - iPhone {modelDescription} not available");
-                Log.Info($"{DateTime.Now} - iPhone {modelDescription} not available");
+                Console.WriteLine($"iPhone {modelDescription} not available");
+                Log.Info($"iPhone {modelDescription} not available");
             }
         }
 
